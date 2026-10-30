@@ -391,7 +391,11 @@ M.push({id:"chunk", slide:"Slide 6", icon:"cut", name:"El corte perfecto", desc:
   const S=[["A","Síntoma: la VPN muestra el error AUTH-441 al conectar."],["A","Afecta a la versión 6.2 del cliente VPN."],["A","Paso 1: cierra el cliente VPN."],["A","Paso 2: reinstala el certificado corporativo y vuelve a conectar."],
            ["B","Síntoma: el correo no sincroniza en el móvil."],["B","Afecta a iOS 17 con el perfil MDM activo."],["B","Paso 1: elimina la cuenta de correo y vuelve a añadirla desde el portal MDM."]];
   const cuts=new Set();
-  const doc=el("div",{class:"doc"}); play.append(el("div",{class:"small center"},"Manual de incidentes · toca entre líneas para cortar ✂"), doc);
+  play.append(el("div",{class:"query"},`<small>EL PROBLEMA</small>Un usuario preguntará: <b>«¿Cómo resuelvo AUTH-441 en la VPN 6.2?»</b><br>
+    El RAG no le pasa al LLM el manual entero: lo divide en <b>chunks</b> y solo recupera el chunk que más se parece a la pregunta.
+    Si cortas mal, Bit recupera un trozo <span style="color:var(--red)">sin los pasos</span> (pierde contexto) o uno que <span style="color:var(--red)">mezcla otra incidencia</span> (ruido).
+    <br><span class="small">🎯 Objetivo: que cada chunk tenga UNA incidencia completa (síntoma + versión + pasos).</span>`));
+  const doc=el("div",{class:"doc"}); play.append(el("div",{class:"small center",style:"margin-top:10px"},"Manual de incidentes · toca entre líneas para cortar ✂"), doc);
   S.forEach((s,i)=>{ doc.append(el("div",{class:"sent "+s[0]},s[1]));
     if(i<S.length-1){ const g=el("button",{class:"gap","aria-label":"cortar después de la línea "+(i+1)},"<span>✂ cortar aquí</span>");
       g.addEventListener("click",()=>{ cuts.has(i)?cuts.delete(i):cuts.add(i); g.classList.toggle("cut"); g.querySelector("span").textContent=cuts.has(i)?"✂ CORTE":"✂ cortar aquí"; sfx("snip"); });
