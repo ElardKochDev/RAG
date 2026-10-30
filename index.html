@@ -49,8 +49,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .node{position:relative;text-align:left;background:var(--panel2);color:var(--text);box-shadow:0 5px 0 #050a1e,0 0 0 3px var(--line);
   padding:14px;margin:0;display:flex;flex-direction:column;gap:8px;min-height:150px}
 .node:hover{box-shadow:0 5px 0 #050a1e,0 0 0 3px var(--cyan)}
-.node .num{font-family:var(--px);font-size:10px;color:var(--gold)}
-.node .nm{font-family:var(--px);font-size:11px;line-height:1.5;color:var(--text)}
+.node .num{font-family:var(--px);font-size:10px;color:var(--gold);padding-right:46px;line-height:1.5}
+.node .nm{font-family:var(--px);font-size:11px;line-height:1.5;color:var(--text);padding-right:20px}
 .node .ds{font-family:var(--body);font-size:20px;color:var(--muted)}
 .node .stars{font-family:var(--px);font-size:12px;color:var(--gold);margin-top:auto}
 .node .stars .off{color:#33427a}
@@ -203,7 +203,8 @@ function drawBit(ctx, x, y, o={}){ // 11x12
   const rows = (o.up?BIT_UP:BIT).concat(BIT_LEGS[o.frame||0]);
   drawRows(ctx, rows, BIT_C, x, y-(o.hop||0)-(rows.length-12), o.flip);
 }
-function portrait(cv){ const c=cv.getContext("2d"); c.clearRect(0,0,14,12); drawRows(c, WIZ.slice(0,12), WIZ_C, 0, 0); }
+function portrait(cv, who){ const c=cv.getContext("2d"); c.clearRect(0,0,14,12);
+  if(who==="BIT") drawRows(c, BIT, BIT_C, 1, 1); else drawRows(c, WIZ.slice(0,12), WIZ_C, 0, 0); }
 
 /* ================= audio (WebAudio chiptune) ================= */
 const AU = {ctx:null, music:true, sfx:true, master:null, mbus:null, timer:null};
@@ -279,7 +280,8 @@ const shuffle = a => { a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.r
 /* typewriter */
 let typing=null;
 function say(node, text, who){
-  if(who) { const w=node.parentElement.querySelector(".who"); if(w) w.textContent=who; }
+  if(who) { const w=node.parentElement.querySelector(".who"); if(w) w.textContent=who;
+    const pc=node.closest(".dialog")?.querySelector("canvas.portrait"); if(pc) portrait(pc, who); }
   if(typing) clearInterval(typing.id);
   node.textContent=""; let i=0;
   const t={id:setInterval(()=>{ i++; node.textContent=text.slice(0,i); if(i%3===0 && text[i]!==" ") sfx("blip"); if(i>=text.length){ clearInterval(t.id); typing=null; } },22), node, text};
@@ -546,7 +548,7 @@ M.push({id:"doctor", slide:"Slides 13 · 26", icon:"doc", name:"Doctor RAG", des
  }});
 
 /* ---------- 6. Grounded ≠ correcto (slide 21) ---------- */
-M.push({id:"grounded", slide:"Slide 21", icon:"grd", name:"Grounded ≠ correcto", desc:"¿Qué capa falló: evidencia, vigencia o corrección?",
+M.push({id:"grounded", slide:"Slide 21", icon:"grd", name:"Grounded no es correcto", desc:"¿Qué capa falló: evidencia, vigencia o corrección?",
  intro:"Tres preguntas: ¿Hay EVIDENCIA y la cita respalda el claim? ¿La fuente sigue VIGENTE? ¿La afirmación es CORRECTA en el mundo real? Para cada caso, ¿qué capa falló?",
  render(play){
   const C=[["Bit cita fielmente la política de teletrabajo… que fue derogada en enero.","VIG","La respuesta es fiel a su fuente, pero la fuente ya no es válida."],
