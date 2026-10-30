@@ -114,6 +114,16 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .chip.on{background:var(--cyan);color:var(--ink);box-shadow:0 3px 0 #1a6a90,0 0 0 3px #000}
 .result-canvas{white-space:pre-wrap;background:var(--paper);color:var(--ink);padding:12px;border:3px solid var(--gold);font-size:21px}
 .footer{margin-top:28px;text-align:center;color:var(--muted);font-size:18px}
+.namebox{margin:18px auto 4px;max-width:420px}
+.namebox label{font-family:var(--px);font-size:10px;color:var(--gold);display:block;margin-bottom:8px}
+.namebox input{width:100%;font-family:var(--body);font-size:28px;padding:8px 12px;background:#0a1230;color:var(--text);border:3px solid var(--cyan);box-shadow:0 0 0 3px #000;outline:none;text-align:center}
+.namebox input:focus{border-color:var(--gold)}
+.player{font-family:var(--px);font-size:10px;color:var(--cyan2)}
+#ending{text-align:center;padding-top:2vh}
+#ending .big{font-family:var(--px);font-size:clamp(16px,3.4vw,28px);color:var(--gold);text-shadow:3px 3px 0 #000;line-height:1.5;margin:10px 0}
+#ending ul{list-style:none;padding:0;margin:12px auto;max-width:640px;text-align:left}
+#ending li{padding:4px 0}
+#ending li::before{content:"★ ";color:var(--gold)}
 @media (max-width:640px){
   html,body{font-size:20px}
   .steps{grid-template-columns:repeat(3,1fr)}
@@ -129,6 +139,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
   <div class="topbar">
     <div class="px" style="font-size:11px;color:var(--cyan)">RAG QUEST · VUELO 3</div>
     <div class="row">
+      <span class="player" id="playerTag"></span>
       <span class="stats" id="stats">★ 0/24</span>
       <button class="ghost" id="btnMusic" aria-pressed="true" title="Música">♪ MÚSICA</button>
       <button class="ghost" id="btnSfx" aria-pressed="true" title="Efectos">🔊 SFX</button>
@@ -142,7 +153,11 @@ button:disabled{opacity:.45;cursor:not-allowed}
     <div class="hero"><canvas id="heroWiz" class="px" width="20" height="26"></canvas><canvas id="heroBit" class="px" width="11" height="12"></canvas></div>
     <p>Ocho misiones para practicar los mini labs del vuelo de RAG: cortar chunks, elegir señales de búsqueda, romper el pipeline, medir, diagnosticar y diseñar.</p>
     <p class="small">El Mago explica. Bit, el agente, ejecuta. Tú decides.</p>
-    <button id="btnStart" style="font-size:14px;padding:16px 22px;margin-top:18px">▶ COMENZAR</button>
+    <form id="nameForm" class="namebox" autocomplete="off">
+      <label for="playerName">ESCRIBE TU NOMBRE, AVENTURERO</label>
+      <input id="playerName" maxlength="20" placeholder="Tu nombre">
+    </form>
+    <button id="btnStart" style="font-size:14px;padding:16px 22px;margin-top:14px">▶ COMENZAR</button>
   </section>
 
   <!-- MAPA -->
@@ -152,7 +167,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
       <div><div class="who">MAGO</div><div class="say" id="mapSay"></div></div>
     </div>
     <div class="map" id="mapGrid"></div>
-    <div class="center" style="margin-top:16px"><button class="ghost" id="btnReset">↺ REINICIAR PROGRESO</button></div>
+    <div class="center" style="margin-top:16px"><button id="btnEnding" class="hidden">🏆 VER FINAL</button><button class="ghost" id="btnReset">↺ REINICIAR PROGRESO</button><button class="ghost" id="btnName">✎ CAMBIAR NOMBRE</button></div>
   </section>
 
   <!-- MISIÓN -->
@@ -167,6 +182,30 @@ button:disabled{opacity:.45;cursor:not-allowed}
       <div style="flex:1"><div class="who" id="mWho">MAGO</div><div class="say" id="mSay"></div></div>
     </div>
     <div class="play" id="play"></div>
+  </section>
+
+  <!-- FINAL -->
+  <section id="ending" class="hidden">
+    <canvas id="endCv" class="px" width="120" height="44" style="width:100%;max-width:720px;height:auto"></canvas>
+    <div class="big" id="endTitle"></div>
+    <div class="px" id="endStars" style="font-size:14px;color:var(--gold)"></div>
+    <div class="box" style="text-align:left">
+      <div class="px" style="font-size:10px;color:var(--gold);margin-bottom:8px">EL MAGO Y BIT TE DICEN</div>
+      <div id="endMsg" style="font-size:24px"></div>
+      <ul>
+        <li>Un buen chunk guarda una idea completa.</li>
+        <li>Vector, keyword y metadata responden preguntas distintas: júntalas en hybrid search.</li>
+        <li>La calidad final la limita el eslabón más débil del pipeline.</li>
+        <li>Mide retrieval y generación por separado: precision, recall y faithfulness.</li>
+        <li>Diagnostica el síntoma antes de cambiar la arquitectura.</li>
+        <li>Grounded no significa correcto: revisa evidencia, vigencia y corrección.</li>
+        <li>El contenido recuperado es evidencia, nunca una instrucción.</li>
+      </ul>
+    </div>
+    <div class="row" style="justify-content:center">
+      <button id="btnEndMap">◀ VOLVER AL MAPA</button>
+      <button class="ghost" id="btnEndAgain">↺ JUGAR DE NUEVO</button>
+    </div>
   </section>
 
   <div class="footer">Juego didáctico del Vuelo 3 · Contexto empresarial y RAG · pixel art y sonido generados por código</div>
@@ -336,7 +375,8 @@ function finish(stars, msg){
   const nxt = M[M.indexOf(cur)+1];
   const row = el("div",{class:"row",style:"margin-top:8px"});
   row.append(el("button",{onclick:()=>openMission(cur)},"↺ REPETIR"));
-  if(nxt) row.append(el("button",{onclick:()=>openMission(nxt)},"SIGUIENTE ▶"));
+  if(allDone()) row.append(el("button",{onclick:showEnding},"🏆 FINAL"));
+  else if(nxt) row.append(el("button",{onclick:()=>openMission(nxt)},"SIGUIENTE ▶"));
   row.append(el("button",{class:"ghost",onclick:showMap},"◀ MAPA"));
   fb.append(row); $("#play").append(fb); fb.scrollIntoView({behavior:"smooth",block:"nearest"});
 }
@@ -630,35 +670,74 @@ M.push({id:"canvas", slide:"Slide 27", icon:"can", name:"Diseña tu RAG", desc:"
  }});
 
 /* ================= navegación ================= */
+let playerName = store.get("ragquest.name", "");
+const allDone = () => M.every(m => (progress[m.id]||0) > 0);
+function setName(n){ playerName=(n||"").trim().slice(0,20); store.set("ragquest.name",playerName); $("#playerTag").textContent=playerName?"♟ "+playerName.toUpperCase():""; }
+let endT0=0, confetti=[];
+function showEnding(){
+  if(cur&&cur.cleanup) cur.cleanup(); cur=null;
+  ["#title","#map","#mission"].forEach(id=>$(id).classList.add("hidden")); $("#ending").classList.remove("hidden");
+  const total=M.reduce((a,m)=>a+(progress[m.id]||0),0);
+  $("#endTitle").textContent=`¡GRACIAS POR JUGAR, ${(playerName||"aventurero").toUpperCase()}!`;
+  $("#endStars").textContent=`★ ${total} / ${M.length*3} ESTRELLAS`;
+  $("#endMsg").textContent = total===M.length*3 ? "¡Perfecto! Completaste las 8 misiones con todas las estrellas. Ya estás listo para el siguiente vuelo: agents, tools, MCP y human-in-the-loop."
+    : "Completaste las 8 misiones del Vuelo 3. Puedes volver al mapa y repetir misiones para conseguir las 3 estrellas en todas.";
+  endT0=performance.now()/1000;
+  confetti=[...Array(70)].map(()=>({x:Math.random()*120,y:-Math.random()*44,v:6+Math.random()*12,c:["#ffc83d","#3ec6ff","#ff8a5c","#60e68c","#c8a0ff"][Math.random()*5|0]}));
+  sfx("fanfare"); setTimeout(()=>sfx("ok"),1200);
+  window.scrollTo({top:0});
+}
+function endingAnim(){
+  const cv=$("#endCv"), c=cv.getContext("2d"); let last=0;
+  anims.add(t=>{ if($("#ending").classList.contains("hidden")) return; const dt=Math.min(0.05,t-(last||t)); last=t;
+    c.clearRect(0,0,120,44); c.fillStyle="#16245a"; c.fillRect(0,38,120,6); c.fillStyle="#3ec6ff"; c.fillRect(0,38,120,1);
+    const u=t-endT0, hop=Math.abs(Math.sin(u*5))*4|0;
+    drawWizard(c,38,12,{cast:(u*2|0)%2===0, bob:(u*3|0)%2});
+    drawBit(c,66,26,{up:true,hop});
+    confetti.forEach(p=>{ p.y+=p.v*dt; if(p.y>44){ p.y=-2; p.x=Math.random()*120; } c.fillStyle=p.c; c.fillRect(p.x|0,p.y|0,1,1); });
+    for(let i=0;i<6;i++){ const a=u*2+i*1.047, r=10+(u*8%6); c.fillStyle=i%2?"#ffc83d":"#96e8ff"; c.fillRect(52+Math.cos(a)*r|0, 12+Math.sin(a)*r*0.6|0,1,1); }
+  });
+}
 function updateStats(){ const s=M.reduce((a,m)=>a+(progress[m.id]||0),0); $("#stats").textContent=`★ ${s}/${M.length*3}`; }
 function showMap(){
   if(cur&&cur.cleanup) cur.cleanup(); cur=null;
-  $("#title").classList.add("hidden"); $("#mission").classList.add("hidden"); $("#map").classList.remove("hidden");
+  ["#title","#mission","#ending"].forEach(id=>$(id).classList.add("hidden")); $("#map").classList.remove("hidden");
+  $("#btnEnding").classList.toggle("hidden", !allDone());
   const g=$("#mapGrid"); g.innerHTML="";
   M.forEach((m,i)=>{ const s=progress[m.id]||0;
     const n=el("button",{class:"node"},`<span class="num">MISIÓN ${i+1} · ${m.slide}</span><span class="nm">${m.name}</span><span class="ds">${m.desc}</span><span class="stars">${"★".repeat(s)}<span class="off">${"★".repeat(3-s)}</span></span>`);
     const cv=el("canvas",{class:"px"}); nodeIcon(cv,m.icon); n.append(cv);
     n.addEventListener("click",()=>openMission(m)); g.append(n); });
   const total=M.reduce((a,m)=>a+(progress[m.id]||0),0);
-  say($("#mapSay"), total===0 ? "Bienvenido al Vuelo 3. Cada misión es un mini lab del curso. Bit ejecuta, tú decides. ¡Empieza por donde quieras!"
+  const nm = playerName || "aventurero";
+  say($("#mapSay"), total===0 ? `¡Bienvenido al Vuelo 3, ${nm}! Cada misión es un mini lab del curso. Bit ejecuta, tú decides. ¡Empieza por donde quieras!`
     : total===M.length*3 ? "¡Todas las misiones con 3 estrellas! Ya puedes diseñar un RAG empresarial y justificar cada decisión."
-    : `Llevas ${total} estrellas. Repite misiones para conseguir las 3.`);
+    : allDone() ? `¡Lo lograste, ${nm}! Tienes ${total} estrellas. Repite misiones para conseguir las 3 o mira el final.`
+    : `Llevas ${total} estrellas, ${nm}. ¡Sigue así!`);
   window.scrollTo({top:0});
 }
 function openMission(m){
   if(cur&&cur.cleanup) cur.cleanup();
   cur=m; cur._fin=false; mistakes=0; sfx("cast");
-  $("#map").classList.add("hidden"); $("#title").classList.add("hidden"); $("#mission").classList.remove("hidden");
+  ["#map","#title","#ending"].forEach(id=>$(id).classList.add("hidden")); $("#mission").classList.remove("hidden");
   $("#mSlide").textContent=`MISIÓN ${M.indexOf(m)+1}/${M.length} · ${m.slide}`; $("#mTitle").textContent=m.name.toUpperCase();
   const play=$("#play"); play.innerHTML=""; mSay(m.intro); m.render(play); window.scrollTo({top:0});
 }
-$("#btnStart").addEventListener("click",()=>{ audioInit(); sfx("cast"); showMap(); });
+function start(){ const inp=$("#playerName"); if(!inp.value.trim()){ inp.focus(); inp.placeholder="¡Escribe tu nombre!"; sfx("fail"); return; }
+  setName(inp.value); sfx("cast"); showMap(); }
+$("#btnStart").addEventListener("click",()=>{ audioInit(); start(); });
+$("#nameForm").addEventListener("submit",e=>{ e.preventDefault(); audioInit(); start(); });
+$("#playerName").value = playerName; setName(playerName);
+$("#btnName").addEventListener("click",()=>{ sfx("click"); $("#map").classList.add("hidden"); $("#title").classList.remove("hidden"); $("#playerName").focus(); });
+$("#btnEnding").addEventListener("click",showEnding);
+$("#btnEndMap").addEventListener("click",()=>{ sfx("click"); showMap(); });
+$("#btnEndAgain").addEventListener("click",()=>{ progress={}; store.set("ragquest.progress",progress); updateStats(); sfx("cast"); showMap(); });
 $("#btnBack").addEventListener("click",()=>{ sfx("click"); showMap(); });
 $("#btnReset").addEventListener("click",()=>{ progress={}; store.set("ragquest.progress",progress); updateStats(); showMap(); });
 $("#btnMusic").addEventListener("click",e=>{ audioInit(); AU.music=!AU.music; e.currentTarget.setAttribute("aria-pressed",AU.music); e.currentTarget.style.opacity=AU.music?1:.5; AU.music?musicStart():musicStop(); });
 $("#btnSfx").addEventListener("click",e=>{ audioInit(); AU.sfx=!AU.sfx; e.currentTarget.setAttribute("aria-pressed",AU.sfx); e.currentTarget.style.opacity=AU.sfx?1:.5; });
 document.querySelectorAll("canvas.portrait").forEach(portrait);
-stars(); heroAnim(); updateStats();
+stars(); heroAnim(); endingAnim(); updateStats();
 </script>
 </body>
 </html>
